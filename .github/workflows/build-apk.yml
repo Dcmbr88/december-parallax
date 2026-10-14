@@ -40,6 +40,62 @@ jobs:
           npx cap init "December Parallax" "com.december.parallax" --web-dir www
           npx cap add android
           npx cap sync android
+
+      - name: Generate snowflake launcher icon
+        run: |
+          python3 -m venv .icon-venv
+          .icon-venv/bin/pip install --quiet pillow
+          .icon-venv/bin/python - <<'PY'
+          from PIL import Image, ImageDraw
+          from pathlib import Path
+          import math
+          root = Path("android/app/src/main/res")
+          densities = [
+              ("mdpi", 1, 48, 108),
+              ("hdpi", 1.5, 72, 162),
+              ("xhdpi", 2, 96, 216),
+              ("xxhdpi", 3, 144, 324),
+              ("xxxhdpi", 4, 192, 432),
+          ]
+          def snowflake(size, background):
+              scale = 4
+              im = Image.new("RGBA", (size*scale, size*scale), background)
+              d = ImageDraw.Draw(im)
+              c = size*scale/2
+              radius = size*scale*0.34
+              width = max(2, round(size*scale*0.035))
+              def line(a,b,w=width):
+                  d.line((a[0]*scale,a[1]*scale,b[0]*scale,b[1]*scale), fill=(255,255,255,255), width=w*scale//scale, joint="curve")
+              # Six clean, symmetrical arms with forked crystalline tips.
+              for k in range(6):
+                  ang = math.radians(-90 + 60*k)
+                  ux,uy = math.cos(ang),math.sin(ang)
+                  end=(size/2+radius*ux,size/2+radius*uy)
+                  line((size/2,size/2),end)
+                  for ratio in (0.56,0.76):
+                      px=size/2+radius*ratio*ux
+                      py=size/2+radius*ratio*uy
+                      branch=radius*0.22 if ratio==0.56 else radius*0.18
+                      for sign in (-1,1):
+                          ba=ang+sign*math.radians(48)
+                          line((px,py),(px+branch*math.cos(ba),py+branch*math.sin(ba)))
+              im=im.resize((size,size),Image.Resampling.LANCZOS)
+              return im
+          for name, scale, legacy, foreground in densities:
+              folder=root/f"mipmap-{name}"
+              folder.mkdir(parents=True,exist_ok=True)
+              snowflake(legacy,(0,0,0,255)).save(folder/"ic_launcher.png")
+              snowflake(legacy,(0,0,0,255)).save(folder/"ic_launcher_round.png")
+              snowflake(foreground,(0,0,0,0)).save(folder/"ic_launcher_foreground.png")
+          (root/"mipmap-anydpi-v26").mkdir(parents=True,exist_ok=True)
+          (root/"values").mkdir(parents=True,exist_ok=True)
+          (root/"values/ic_launcher_background.xml").write_text(
+              '<?xml version="1.0" encoding="utf-8"?>\n<resources><color name="ic_launcher_background">#000000</color></resources>\n')
+          adaptive='<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/ic_launcher_background"/><foreground android:drawable="@mipmap/ic_launcher_foreground"/></adaptive-icon>\n'
+          (root/"mipmap-anydpi-v26/ic_launcher.xml").write_text(adaptive)
+          (root/"mipmap-anydpi-v26/ic_launcher_round.xml").write_text(adaptive)
+          PY
+
       - name: Align Kotlin dependencies
         run: |
           cat >> android/build.gradle <<'GRADLE'
