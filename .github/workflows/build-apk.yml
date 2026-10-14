@@ -35,7 +35,7 @@ jobs:
       - name: Create Capacitor project
         run: |
           npm init -y
-          npm install @capacitor/core @capacitor/android @capacitor/filesystem @capacitor/share
+          npm install @capacitor/core@7 @capacitor/android@7 @capacitor/filesystem@7 @capacitor/share@7
           npm install --save-dev @capacitor/cli
           npx cap init "December Parallax" "com.december.parallax" --web-dir www
           npx cap add android
