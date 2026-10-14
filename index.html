@@ -152,7 +152,7 @@ async function saveExport(blob,filename){
  const nativePlatform=!!(window.AndroidSave || (cap && (
   (typeof cap.isNativePlatform==='function' && cap.isNativePlatform()) ||
   (typeof cap.getPlatform==='function' && cap.getPlatform()!=='web')
- ));
+ )));
  if(nativePlatform){
   msg('Сохраняю файл в папку «Загрузки» Android…');
   try{
