@@ -17,6 +17,7 @@
 <button id="anim" class="toggle" disabled aria-pressed="false">▶ Анимация</button>
 <button id="export" disabled>⇩ Экспорт WebM</button>
 <button id="exportGif" disabled>▧ Экспорт GIF</button>
+<button id="music" class="toggle" aria-pressed="false">♫ Включить 8-bit</button>
 <label class="slider">Сила глубины <input id="power" type="range" min="0" max="100" value="34"><span id="pct">34%</span></label>
 </div>
 <div class="row"><button id="reset" disabled>↺ Сбросить камеру</button><span class="help">Подсказка: можно двигать мышь или палец по предпросмотру.</span></div>
@@ -29,6 +30,46 @@ let img=null, loaded=false, playing=false, raf=0, start=0, estimator=null, gl=nu
 const vertex=`#version 300 es\nin vec2 a_position; out vec2 v_uv;\nvoid main(){v_uv=(a_position+1.0)*0.5; gl_Position=vec4(a_position,0.0,1.0);}`;
 const fragment=`#version 300 es\nprecision highp float; in vec2 v_uv; out vec4 outColor;\nuniform sampler2D u_image; uniform sampler2D u_depth; uniform vec2 u_shift; uniform float u_zoom; uniform float u_hasDepth; uniform float u_time;\nvoid main(){\n vec2 uv=(v_uv-0.5)/u_zoom+0.5;\n float z=texture(u_depth,clamp(uv,0.0,1.0)).r;\n vec2 warped=uv-u_shift*(z-0.5)*u_hasDepth;\n warped=clamp(warped,vec2(0.001),vec2(0.999));\n outColor=texture(u_image,warped);\n}`;
 function msg(s){$('status').textContent=s}
+
+const musicNotes=[659.25,null,783.99,null,987.77,null,783.99,null,659.25,null,587.33,null,523.25,null,587.33,null,659.25,null,783.99,null,880,null,783.99,null,659.25,null,587.33,null,523.25,null,493.88,null];
+const bassNotes=[130.81,null,130.81,null,174.61,null,174.61,null,146.83,null,146.83,null,196,null,196,null,110,null,110,null,164.81,null,164.81,null,123.47,null,123.47,null,185,null,185,null];
+let musicContext=null,musicTimer=null,musicOn=false,nextMusicLoop=0;
+function musicTone(freq,when,duration,wave,volume){
+ if(!musicContext||!freq)return;
+ const osc=musicContext.createOscillator(),gain=musicContext.createGain();
+ osc.type=wave;osc.frequency.setValueAtTime(freq,when);
+ gain.gain.setValueAtTime(0.0001,when);gain.gain.exponentialRampToValueAtTime(volume,when+0.012);
+ gain.gain.exponentialRampToValueAtTime(0.0001,when+duration);
+ osc.connect(gain);gain.connect(musicContext.destination);osc.start(when);osc.stop(when+duration+0.025);
+}
+function scheduleMusicLoop(at){
+ const beat=0.25;
+ for(let i=0;i<32;i++){
+  const t=at+i*beat;
+  if(musicNotes[i])musicTone(musicNotes[i],t,0.17,'square',0.045);
+  if(i%2===0&&bassNotes[i])musicTone(bassNotes[i],t,0.36,'triangle',0.07);
+  if(i%4===2)musicTone([523.25,659.25,783.99,659.25][Math.floor(i/2)%4],t,0.075,'square',0.018);
+ }
+ nextMusicLoop=at+8;
+}
+async function toggleMusic(){
+ const button=$('music');
+ if(musicOn){
+  musicOn=false;clearInterval(musicTimer);musicTimer=null;
+  if(musicContext){const old=musicContext;musicContext=null;try{await old.close()}catch{}}
+  button.textContent='♫ Включить 8-bit';button.setAttribute('aria-pressed','false');msg('8-битная зимняя мелодия выключена.');return;
+ }
+ try{
+  const AudioCtx=window.AudioContext||window.webkitAudioContext;
+  if(!AudioCtx)throw Error('Этот браузер не поддерживает Web Audio.');
+  musicContext=new AudioCtx();await musicContext.resume();musicOn=true;
+  scheduleMusicLoop(musicContext.currentTime+0.06);
+  musicTimer=setInterval(()=>{if(musicOn&&musicContext&&nextMusicLoop<musicContext.currentTime+0.35)scheduleMusicLoop(nextMusicLoop)},100);
+  button.textContent='♫ Выключить 8-bit';button.setAttribute('aria-pressed','true');msg('Играет оригинальная 8-битная зимняя мелодия. Она зациклена и не включается сама.');
+ }catch(e){musicOn=false;button.textContent='♫ Включить 8-bit';button.setAttribute('aria-pressed','false');msg('Не удалось запустить музыку: '+e.message)}
+}
+$('music').addEventListener('click',toggleMusic);
+
 function loadGifEncoder(){if(window.GIF)return Promise.resolve(window.GIF);if(gifLibPromise)return gifLibPromise;gifLibPromise=new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js';sc.onload=()=>window.GIF?resolve(window.GIF):reject(Error('Библиотека GIF не загрузилась'));sc.onerror=()=>reject(Error('Не удалось загрузить кодировщик GIF. Проверь интернет.'));document.head.appendChild(sc)});return gifLibPromise}
 function initGL(){
  if(gl)return true;
