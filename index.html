@@ -140,14 +140,24 @@ canvas.addEventListener('pointermove',setPointer);canvas.addEventListener('point
 
 async function saveExport(blob,filename){
  const cap=window.Capacitor;
- if(cap?.isNativePlatform?.() && typeof cap.registerPlugin==='function'){
+ const nativePlatform=!!(cap && (
+  (typeof cap.isNativePlatform==='function' && cap.isNativePlatform()) ||
+  (typeof cap.getPlatform==='function' && cap.getPlatform()!=='web')
+ ));
+ if(nativePlatform){
   msg('Передаю файл в Android…');
-  const Filesystem=cap.registerPlugin('Filesystem');
-  const Share=cap.registerPlugin('Share');
-  const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=()=>reject(reader.error||Error('Не удалось прочитать файл'));reader.readAsDataURL(blob)});
-  const saved=await Filesystem.writeFile({path:filename,data,directory:'CACHE'});
-  await Share.share({title:'December Parallax',text:'Готовый файл '+filename,url:saved.uri,dialogTitle:'Сохранить или отправить файл'});
-  msg('Файл создан. В меню Android выбери «Сохранить в файлы» или подходящее приложение.');return;
+  try{
+   const Filesystem=cap.Plugins?.Filesystem || cap.registerPlugin?.('Filesystem');
+   const Share=cap.Plugins?.Share || cap.registerPlugin?.('Share');
+   if(!Filesystem || !Share) throw Error('Android-модули сохранения не подключены.');
+   const data=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=()=>reject(reader.error||Error('Не удалось прочитать файл'));reader.readAsDataURL(blob)});
+   const saved=await Filesystem.writeFile({path:filename,data,directory:'CACHE'});
+   await Share.share({title:'December Parallax',text:'Готовый файл '+filename,url:saved.uri,dialogTitle:'Сохранить или отправить файл'});
+   msg('Файл создан. В меню Android выбери «Сохранить в файлы» или подходящее приложение.');return;
+  }catch(e){
+   console.error('Native export failed:',e);
+   msg('Android не смог сохранить файл: '+(e?.message||e));throw e;
+  }
  }
  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
  msg('Файл подготовлен. Если загрузка не началась, открой ссылку на файл в браузере и выбери «Скачать».');
