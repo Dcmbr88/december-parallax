@@ -41,6 +41,68 @@ jobs:
           npx cap add android
           npx cap sync android
 
+      - name: Add native Android Downloads bridge
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/src/main/java/com/december/parallax/MainActivity.kt")
+          p.parent.mkdir(parents=True, exist_ok=True)
+          p.write_text("""package com.december.parallax
+
+          import android.content.ContentValues
+          import android.content.Context
+          import android.os.Build
+          import android.provider.MediaStore
+          import android.util.Base64
+          import android.webkit.JavascriptInterface
+          import com.getcapacitor.BridgeActivity
+
+          class MainActivity : BridgeActivity() {
+              override fun onStart() {
+                  super.onStart()
+                  bridge?.webView?.addJavascriptInterface(DownloadBridge(this), "AndroidSave")
+              }
+          }
+
+          class DownloadBridge(private val context: Context) {
+              @JavascriptInterface
+              fun saveToDownloads(filename: String, base64: String, mimeType: String): String {
+                  return try {
+                      val safeName = filename.substringAfterLast('/').substringAfterLast('\\\\')
+                      val values = ContentValues().apply {
+                          put(MediaStore.MediaColumns.DISPLAY_NAME, safeName)
+                          put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                              put(MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS)
+                              put(MediaStore.MediaColumns.IS_PENDING, 1)
+                          }
+                      }
+                      val resolver = context.contentResolver
+                      val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+                          MediaStore.Downloads.EXTERNAL_CONTENT_URI
+                      else MediaStore.Files.getContentUri("external")
+                      val uri = resolver.insert(collection, values) ?: throw Exception("Android не создал файл в Загрузках")
+                      try {
+                          val bytes = Base64.decode(base64, Base64.DEFAULT)
+                          resolver.openOutputStream(uri)?.use { it.write(bytes) }
+                              ?: throw Exception("Не удалось открыть файл для записи")
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                              val done = ContentValues().apply { put(MediaStore.MediaColumns.IS_PENDING, 0) }
+                              resolver.update(uri, done, null, null)
+                          }
+                          "OK:" + uri.toString()
+                      } catch (e: Exception) {
+                          resolver.delete(uri, null, null)
+                          throw e
+                      }
+                  } catch (e: Exception) {
+                      "ERROR:" + (e.message ?: "Ошибка сохранения")
+                  }
+              }
+          }
+          """.replace("          ", ""))
+          PY
+
       - name: Generate snowflake launcher icon
         run: |
           python3 -m venv .icon-venv
