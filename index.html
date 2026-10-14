@@ -3,8 +3,36 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>December Parallax Studio v9 · Seamless Loop</title>
+
 <style>
-:root{color-scheme:dark;--bg:#0c1016;--panel:#151b24;--line:#2b3543;--text:#e9eff7;--muted:#9eacbc;--accent:#b9d8ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#182331 0,#0c1016 55%);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}header{padding:18px clamp(14px,4vw,28px);border-bottom:1px solid var(--line);background:#101721e8}h1{font-size:clamp(20px,4vw,27px);margin:0;letter-spacing:.2px}header p{margin:5px 0 0;color:var(--muted)}main{width:min(1100px,100%);margin:auto;padding:14px}.stage{position:relative;background:#05070a;border:1px solid #303c4c;border-radius:12px;overflow:hidden;min-height:220px;display:grid;place-items:center;box-shadow:0 18px 55px #0006}canvas{display:block;width:100%;height:auto;max-height:70vh;object-fit:contain;touch-action:pan-y}.empty{padding:52px 18px;text-align:center;color:#9caabc}.controls{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:12px 0}.file,button{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #394657;background:#202a37;color:var(--text);padding:10px 13px;border-radius:9px;cursor:pointer;font:inherit;min-height:42px}.primary{background:var(--accent);border-color:var(--accent);color:#101722;font-weight:700}button:disabled{opacity:.38;cursor:default}input[type=file]{display:none}.slider{display:flex;align-items:center;gap:10px;flex:1;min-width:220px;max-width:440px;background:var(--panel);border:1px solid #263241;padding:10px 12px;border-radius:9px;color:#dbe5f1}.slider input{width:100%;accent-color:var(--accent)}.status{min-height:24px;color:#c5d2e2;font-size:13px;margin:8px 2px}.help{font-size:12px;color:#8796a8;line-height:1.55;margin:10px 2px}.pill{display:inline-block;padding:3px 7px;border-radius:6px;background:#273443;color:#dceaff;font-size:11px;vertical-align:middle;margin-left:6px}.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.toggle[aria-pressed="true"]{border-color:#a9cfff;background:#283b50}.stage:after{content:"DECEMBER · 2.5D";position:absolute;bottom:9px;right:11px;font-size:10px;letter-spacing:1.8px;color:#d8e5f2;opacity:.28;pointer-events:none}a{color:#c5dcff}
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+:root{color-scheme:dark;--bg:#000;--panel:#111;--line:#fff;--text:#fff;--muted:#c5c5c5;--accent:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:#000;color:#fff;font:12px/1.8 'Press Start 2P',monospace;image-rendering:pixelated}
+header{padding:20px clamp(12px,4vw,26px);border-bottom:4px solid #fff;background:#000;box-shadow:0 4px 0 #555}
+h1{font-size:clamp(13px,2.5vw,19px);line-height:1.8;margin:0;letter-spacing:0;text-transform:uppercase}
+header p{margin:10px 0 0;color:#c8c8c8;font-size:9px;line-height:2}
+main{width:min(1100px,100%);margin:auto;padding:14px}
+.stage{position:relative;background:#000;border:3px solid #fff;border-radius:0;overflow:hidden;min-height:220px;display:grid;place-items:center;box-shadow:6px 6px 0 #555}
+canvas{display:block;width:100%;height:auto;max-height:70vh;object-fit:contain;touch-action:pan-y;image-rendering:pixelated}
+.empty{padding:52px 18px;text-align:center;color:#ddd;font-size:10px;line-height:2.2}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0}
+.file,button{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:2px solid #fff;background:#000;color:#fff;padding:13px 12px;border-radius:0;cursor:pointer;font:9px/1.9 'Press Start 2P',monospace;min-height:48px;box-shadow:4px 4px 0 #666;transition:transform .06s,box-shadow .06s}
+.file:active,button:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #666}
+.primary{background:#fff;border-color:#fff;color:#000;font-weight:400}
+button:disabled{opacity:.35;cursor:default;box-shadow:none}
+input[type=file]{display:none}
+.slider{display:flex;align-items:center;gap:10px;flex:1;min-width:220px;max-width:440px;background:#090909;border:2px solid #fff;padding:12px;border-radius:0;color:#fff;font-size:9px;line-height:1.8;box-shadow:4px 4px 0 #555}
+.slider input{width:100%;accent-color:#fff}
+.status{min-height:30px;color:#fff;font-size:9px;line-height:2;margin:12px 2px;border:2px dashed #aaa;padding:9px}
+.help{font-size:8px;color:#bdbdbd;line-height:2;margin:10px 2px}
+.pill{display:inline-block;padding:5px 7px;border-radius:0;background:#fff;color:#000;font-size:8px;vertical-align:middle;margin-left:6px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.toggle[aria-pressed="true"]{border-color:#000;background:#fff;color:#000;outline:2px solid #fff;outline-offset:3px}
+.stage:after{content:"DECEMBER // 2.5D";position:absolute;bottom:9px;right:11px;font-size:8px;letter-spacing:1px;color:#fff;opacity:.55;pointer-events:none}
+a{color:#fff}
+::selection{background:#fff;color:#000}
+@media(max-width:520px){body{font-size:10px}header p{font-size:8px}.controls{gap:9px}.file,button{font-size:8px;padding:10px 9px}.slider{min-width:100%;max-width:none}.help{font-size:7px}}
 </style>
 </head>
 <body>
